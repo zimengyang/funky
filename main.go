@@ -15,6 +15,7 @@ import (
 	"strconv"
 
 	"github.com/dispatchframework/funky/pkg/funky"
+	"github.com/dispatchframework/funky/pkg/metrics"
 )
 
 const (
@@ -59,6 +60,13 @@ func healthy(c <-chan struct{}) bool {
 }
 
 func main() {
+
+	wc := metrics.WavefrontClient{
+		URL:   "example.wavefront",
+		Token: "abc",
+	}
+	wc.Report()
+
 	numServers, err := strconv.Atoi(os.Getenv(serversEnvVar))
 	if err != nil {
 		log.Fatalf("Unable to parse %s environment variable", serversEnvVar)

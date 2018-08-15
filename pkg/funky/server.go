@@ -2,6 +2,7 @@
 // Copyright (c) 2018 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 ///////////////////////////////////////////////////////////////////////
+
 package funky
 
 import (
@@ -16,6 +17,9 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/dispatchframework/funky/pkg/metrics"
+	gometrics "github.com/rcrowley/go-metrics"
 )
 
 // Server an interface for managing function servers
@@ -112,6 +116,34 @@ func (s *DefaultServer) Invoke(input *Request) (interface{}, error) {
 
 	s.client.Timeout = timeout
 
+	// TODO: try extract metrics destination from context
+	// Context: {
+	// 	metricsDst: {
+	// 		type: wavefront,
+	// 		url: <URL>,
+	// 		token: <TOKEN>,
+	// 	},
+	// 	...
+	// }
+	// or put them in secrets ?
+	doMetrics := false
+	var metricsClient metrics.Client
+	if metricsDst, ok := input.Context["metricsDst"]; ok {
+		if v, ok := metricsDst.(map[string]interface{}); ok {
+			switch v["type"].(string) {
+			case "wavefront":
+				metricsClient = &metrics.WavefrontClient{
+					URL:   v["url"].(string),
+					Token: v["token"].(string),
+				}
+				doMetrics = true
+				defer metricsClient.Report()
+			default:
+				fmt.Println("NO metrics destination setup.")
+			}
+		}
+	}
+
 	s.resetStreams()
 
 	url := fmt.Sprintf("http://127.0.0.1:%d", s.GetPort())
@@ -120,12 +152,25 @@ func (s *DefaultServer) Invoke(input *Request) (interface{}, error) {
 		defer resp.Body.Close()
 	}
 
+	// TODO: simplify this according to error type
 	if err != nil {
 		if isTimeout(err) {
+			if doMetrics {
+				counter := gometrics.GetOrRegisterCounter("dispatch.function.timeout", nil)
+				counter.Inc(1)
+			}
 			return nil, TimeoutError("Function execution exceeded the timeout")
 		} else if isConnectionRefused(err) {
+			if doMetrics {
+				counter := gometrics.GetOrRegisterCounter("dispatch.function.connectionrefused", nil)
+				counter.Inc(1)
+			}
 			return nil, ConnectionRefusedError(url)
 		} else {
+			if doMetrics {
+				counter := gometrics.GetOrRegisterCounter("dispatch.function.unknownsystemerror", nil)
+				counter.Inc(1)
+			}
 			return nil, UnknownSystemError(err.Error())
 		}
 	}
