@@ -24,7 +24,7 @@ func (wc *WavefrontClient) Report() error {
 	fmt.Println("wavefront client")
 
 	hostTags := map[string]string{
-		"source": "TODO",
+		// "source": "TODO",
 	}
 	wavefront.WavefrontDirect(
 		gometrics.DefaultRegistry,

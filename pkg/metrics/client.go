@@ -6,8 +6,9 @@
 package metrics
 
 // Client interface for pluggable monitoring tool to plug in funky
-// TODO: Formats the gometrics to Client specific metrics
 type Client interface {
 	Report() error
+
+	// Convert gometrics including generic metrics to Client spefict metrics
 	// Format() error
 }

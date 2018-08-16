@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/dispatchframework/funky/pkg/metrics"
-	gometrics "github.com/rcrowley/go-metrics"
 )
 
 // Server an interface for managing function servers
@@ -137,6 +136,7 @@ func (s *DefaultServer) Invoke(input *Request) (interface{}, error) {
 					Token: v["token"].(string),
 				}
 				doMetrics = true
+				metrics.InvocationsCounter.Update(1)
 				defer metricsClient.Report()
 			default:
 				fmt.Println("NO metrics destination setup.")
@@ -156,20 +156,17 @@ func (s *DefaultServer) Invoke(input *Request) (interface{}, error) {
 	if err != nil {
 		if isTimeout(err) {
 			if doMetrics {
-				counter := gometrics.GetOrRegisterCounter("dispatch.function.timeout", nil)
-				counter.Inc(1)
+				metrics.TimeoutCounter.Update(1)
 			}
 			return nil, TimeoutError("Function execution exceeded the timeout")
 		} else if isConnectionRefused(err) {
 			if doMetrics {
-				counter := gometrics.GetOrRegisterCounter("dispatch.function.connectionrefused", nil)
-				counter.Inc(1)
+				metrics.ConnectionRefusedCounter.Update(1)
 			}
 			return nil, ConnectionRefusedError(url)
 		} else {
 			if doMetrics {
-				counter := gometrics.GetOrRegisterCounter("dispatch.function.unknownsystemerror", nil)
-				counter.Inc(1)
+				metrics.UnknownSystemErrorCounter.Update(1)
 			}
 			return nil, UnknownSystemError(err.Error())
 		}
