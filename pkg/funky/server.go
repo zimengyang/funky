@@ -41,6 +41,8 @@ type DefaultServer struct {
 	lock   sync.RWMutex
 	stdout []string
 	stderr []string
+
+	metricsClient metrics.Client
 }
 
 // NewServer returns a new DefaultServer with the given port and command
@@ -126,22 +128,30 @@ func (s *DefaultServer) Invoke(input *Request) (interface{}, error) {
 	// }
 	// or put them in secrets ?
 	doMetrics := false
-	var metricsClient metrics.Client
 	if metricsDst, ok := input.Context["metricsDst"]; ok {
 		if v, ok := metricsDst.(map[string]interface{}); ok {
 			switch v["type"].(string) {
 			case "wavefront":
-				metricsClient = &metrics.WavefrontClient{
+				s.metricsClient = &metrics.WavefrontClient{
 					URL:   v["url"].(string),
 					Token: v["token"].(string),
 				}
+				s.metricsClient.Register(map[string]metrics.GenericMetric{
+					"invocation":           metrics.NewCounter("dispatch.function.invocation"),
+					"timeout":              metrics.NewCounter("dispatch.function.timeout"),
+					"connection-refused":   metrics.NewCounter("dispatch.function.connectionrefused"),
+					"unknown-system-error": metrics.NewCounter("dispatch.function.unknownsystemerror"),
+					"duration":             metrics.NewGauge("dispatch.function.duration"),
+				})
 				doMetrics = true
-				metrics.InvocationsCounter.Update(1)
-				defer metricsClient.Report()
+				s.metricsClient.Update("invocation", 1)
+				defer s.metricsClient.Report()
 			default:
 				fmt.Println("NO metrics destination setup.")
 			}
 		}
+	} else {
+		s.metricsClient = nil
 	}
 
 	s.resetStreams()
@@ -156,17 +166,17 @@ func (s *DefaultServer) Invoke(input *Request) (interface{}, error) {
 	if err != nil {
 		if isTimeout(err) {
 			if doMetrics {
-				metrics.TimeoutCounter.Update(1)
+				s.metricsClient.Update("timeout", 1)
 			}
 			return nil, TimeoutError("Function execution exceeded the timeout")
 		} else if isConnectionRefused(err) {
 			if doMetrics {
-				metrics.ConnectionRefusedCounter.Update(1)
+				s.metricsClient.Update("connection-refused", 1)
 			}
 			return nil, ConnectionRefusedError(url)
 		} else {
 			if doMetrics {
-				metrics.UnknownSystemErrorCounter.Update(1)
+				s.metricsClient.Update("unknown-system-error", 1)
 			}
 			return nil, UnknownSystemError(err.Error())
 		}
@@ -185,6 +195,10 @@ func (s *DefaultServer) Invoke(input *Request) (interface{}, error) {
 		return nil, InvalidResponsePayloadError(err.Error())
 	}
 
+	if doMetrics {
+		err := s.metricsClient.Report()
+		return result, err
+	}
 	return result, nil
 }
 

@@ -14,6 +14,12 @@
   version = "v1.0.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/rcrowley/go-metrics"
+  packages = ["."]
+  revision = "e2704e165165ec55d062f5919b4b29494e9fa790"
+
+[[projects]]
   name = "github.com/stretchr/objx"
   packages = ["."]
   revision = "477a77ecc69700c7cdeb1fa9e129548e1c1c393c"
@@ -30,6 +36,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/wavefrontHQ/go-metrics-wavefront"
+  packages = ["."]
+  revision = "539b1839cdaf551511c78455ea0ea19fed1f81af"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/net"
   packages = ["context"]
   revision = "ed29d75add3d7c4bf7ca65aac0c6df3d1420216f"
@@ -43,6 +55,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6f943fffc7a901c8eea4a5d95974bd13b57d928698949a1f6082069fe0dc610a"
+  inputs-digest = "99a25a35fa68b0f6f5d7ae4e6cfd707bf0acc61db229c85d33f03be1bd1ee48d"
   solver-name = "gps-cdcl"
   solver-version = 1

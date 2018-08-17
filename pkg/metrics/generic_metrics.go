@@ -16,102 +16,46 @@ type GenericMetric interface {
 	Update(interface{}) error
 }
 
-// GenericMetricInvocations function invocation counter
-type GenericMetricInvocations struct {
+// Counter is int64 counter interface
+type Counter struct {
 	Name string
 }
 
-// GenericMetricExecutionDuration function execution duration with unit
-type GenericMetricExecutionDuration struct {
-	Name string
-	Unit string
-}
-
-// GenericMetricTimeout time out error counter
-type GenericMetricTimeout struct {
-	Name string
-}
-
-// GenericMetricConnectionRefused connection refused counter
-type GenericMetricConnectionRefused struct {
-	Name string
-}
-
-// GenericMetricUnknownSystemError unknown system error counter
-type GenericMetricUnknownSystemError struct {
-	Name string
-}
-
-var (
-	// InvocationsCounter var
-	InvocationsCounter = GenericMetricInvocations{
-		Name: "dispatch.function.invocations",
-	}
-	// ExecutionDuration var
-	ExecutionDuration = GenericMetricExecutionDuration{
-		Name: "dispatch.function.executionduration",
-		Unit: "ms",
-	}
-	// TimeoutCounter var
-	TimeoutCounter = GenericMetricTimeout{
-		Name: "dispatch.function.timeout",
-	}
-	// ConnectionRefusedCounter var
-	ConnectionRefusedCounter = GenericMetricConnectionRefused{
-		Name: "dispatch.function.connectionrefused",
-	}
-	// UnknownSystemErrorCounter var
-	UnknownSystemErrorCounter = GenericMetricUnknownSystemError{
-		Name: "dispatch.function.unknownsystemerror",
-	}
-)
-
-// Update will update the metrics w/o input (i as interface)
-func (m *GenericMetricInvocations) Update(i interface{}) error {
+// Update value
+func (c *Counter) Update(i interface{}) error {
 	if val, ok := i.(int64); ok {
-		counter := gometrics.GetOrRegisterCounter(m.Name, nil)
+		counter := gometrics.GetOrRegisterCounter(c.Name, nil)
 		counter.Inc(val)
 		return nil
 	}
-	return fmt.Errorf("Update %s metric failed: cannot convert to float64 value", m.Name)
+	return fmt.Errorf("Update %s metric failed: cannot convert to int64 value", c.Name)
 }
 
-// Update will update the metrics w/o input (i as interface)
-func (m *GenericMetricExecutionDuration) Update(i interface{}) error {
+// NewCounter create new counter
+func NewCounter(name string) GenericMetric {
+	return &Counter{
+		Name: name,
+	}
+}
+
+// Gauge float64 value metrics
+type Gauge struct {
+	Name string
+}
+
+// Update value
+func (g *Gauge) Update(i interface{}) error {
 	if val, ok := i.(float64); ok {
-		duration := gometrics.GetOrRegisterGaugeFloat64(m.Name, nil)
+		duration := gometrics.GetOrRegisterGaugeFloat64(g.Name, nil)
 		duration.Update(val)
 		return nil
 	}
-	return fmt.Errorf("Update %s metric failed: cannot convert to float64 value", m.Name)
+	return fmt.Errorf("Update %s metric failed: cannot convert to float64 value", g.Name)
 }
 
-// Update will update the metrics w/o input (i as interface)
-func (m *GenericMetricTimeout) Update(i interface{}) error {
-	if val, ok := i.(int64); ok {
-		counter := gometrics.GetOrRegisterCounter(m.Name, nil)
-		counter.Inc(val)
-		return nil
+// NewGauge creates new Gauge
+func NewGauge(name string) GenericMetric {
+	return &Gauge{
+		Name: name,
 	}
-	return fmt.Errorf("Update %s metric failed: cannot convert to float64 value", m.Name)
-}
-
-// Update will update the metrics w/o input (i as interface)
-func (m *GenericMetricConnectionRefused) Update(i interface{}) error {
-	if val, ok := i.(int64); ok {
-		counter := gometrics.GetOrRegisterCounter(m.Name, nil)
-		counter.Inc(val)
-		return nil
-	}
-	return fmt.Errorf("Update %s metric failed: cannot convert to float64 value", m.Name)
-}
-
-// Update will update the metrics w/o input (i as interface)
-func (m *GenericMetricUnknownSystemError) Update(i interface{}) error {
-	if val, ok := i.(int64); ok {
-		counter := gometrics.GetOrRegisterCounter(m.Name, nil)
-		counter.Inc(val)
-		return nil
-	}
-	return fmt.Errorf("Update %s metric failed: cannot convert to float64 value", m.Name)
 }

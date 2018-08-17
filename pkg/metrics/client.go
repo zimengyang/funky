@@ -7,8 +7,7 @@ package metrics
 
 // Client interface for pluggable monitoring tool to plug in funky
 type Client interface {
+	Register(metrics map[string]GenericMetric)
+	Update(name string, i interface{}) error
 	Report() error
-
-	// Convert gometrics including generic metrics to Client spefict metrics
-	// Format() error
 }
