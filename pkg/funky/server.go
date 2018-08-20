@@ -126,7 +126,6 @@ func (s *DefaultServer) Invoke(input *Request) (interface{}, error) {
 	// 	},
 	// 	...
 	// }
-	// or put them in secrets ?
 	doMetrics := false
 	if metricsDst, ok := input.Context["metricsDst"]; ok {
 		if v, ok := metricsDst.(map[string]interface{}); ok {
@@ -145,9 +144,8 @@ func (s *DefaultServer) Invoke(input *Request) (interface{}, error) {
 				})
 				doMetrics = true
 				s.metricsClient.Update("invocation", 1)
-				defer s.metricsClient.Report()
 			default:
-				fmt.Println("NO metrics destination setup.")
+				fmt.Println("No metrics destination setup.")
 			}
 		}
 	} else {

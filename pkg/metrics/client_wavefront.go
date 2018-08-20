@@ -28,13 +28,12 @@ func (wc *WavefrontClient) Report() error {
 	hostTags := map[string]string{
 		// "source": "TODO",
 	}
-	wavefront.WavefrontDirect(
+
+	return wavefront.WavefrontDirect(
 		gometrics.DefaultRegistry,
 		5*time.Second,
 		hostTags, "",
 		wc.URL, wc.Token)
-
-	return nil
 }
 
 // Register register metric to client
